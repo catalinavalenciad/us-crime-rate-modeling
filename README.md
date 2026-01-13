@@ -98,7 +98,7 @@ us-crime-rate-modeling/
 
 ├── docs/
 │ ├── index.html
-│ ├── 01_data_overview_and_preparation.html
+│ ├── 01_data_overview_and_assessment.html
 │ ├── 02_regularization_models.html
 │ ├── 03_pca_regression.html
 │ ├── 04_baseline_regression.html
