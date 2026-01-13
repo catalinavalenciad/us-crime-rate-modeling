@@ -1,4 +1,4 @@
-# US Crime Rate Modeling: Comparative Analysis of Regression and Machine Learning Approaches
+# US Crime Rate Modeling: Comparing Regression, Regularization, and Tree-Based Methods
 
 ## Overview
 This project demonstrates the design, evaluation, and comparison of **regression and machine learning models** to predict US crime rates using socio-economic indicators. The analysis focuses on proper model validation, generalization performance, and methodological rigor rather than maximizing in-sample fit.
