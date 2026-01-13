@@ -83,6 +83,7 @@ The goal is to develop models that balance predictive accuracy, interpretability
 
 ## Repository Structure
 
+```
 us-crime-rate-modeling/
 ├── data/
 │ └── uscrime.txt
@@ -111,6 +112,7 @@ us-crime-rate-modeling/
 - All modeling decisions prioritize **interpretability, robustness, and reproducibility**  
 - Reported test and CV results represent unbiased estimates of out-of-sample performance  
 - No data points were removed; outliers were assessed but retained due to small sample size
+```
 
 ---
 
