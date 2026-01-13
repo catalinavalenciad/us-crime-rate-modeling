@@ -1,0 +1,39 @@
+---
+title: "Modeling Synthesis and Final Conclusions"
+author: "Catalina Valencia"
+output: html_document
+---
+
+**Project:** US Crime Rate Modeling: Regression, Regularization, and Tree-Based Methods
+
+**File:** 06_model_synthesis_and_conclusion.Rmd
+
+### Objectives:
+
+This section synthesizes insights from multiple modeling approaches rather than identifying a single universally optimal model. Each method addressed different challenges including multicollinearity, overfitting, interpretability, and nonlinearity, within a small and correlated dataset.
+
+### Summary of Findings
+
+Linear regression served as a strong baseline. While the full model showed high in-sample fit, cross-validation revealed substantial overfitting. A reduced model with fewer predictors generalized better while remaining interpretable.
+
+Principal Component Regression (PCR) reduced multicollinearity through orthogonal components but did not improve predictive performance, reflecting the misalignment between directions of maximal predictor variance and response relevance.
+
+Regularization methods (Ridge, Lasso, Elastic Net, and stepwise regression) improved coefficient stability and, in some cases, produced sparse models. However, their predictive performance was comparable to that of the reduced linear model, serving mainly as robustness checks.
+
+Tree-based models captured nonlinear relationships and interactions. Regression trees were interpretable but unstable, while random forests provided modest performance gains and were less interpretable, constrained by the limited sample size.
+
+### Conclusion
+
+Across all approaches, increased model complexity did not consistently improve out-of-sample performance. Models emphasizing interpretability and moderate complexity generalized more reliably, even in the presence of multicollinearity.
+
+**Final Recommendation**
+
+Balancing predictive accuracy, stability, and interpretability, the reduced linear regression model is the most appropriate choice for this dataset. More complex models offered complementary insights but did not meaningfully outperform simpler alternatives.
+
+**Limitations and Future Work**
+
+This analysis is limited by the small sample size, which constrains the effectiveness of flexible modeling approaches and increases sensitivity to data partitioning. The focus was on prediction rather than causal inference. Future work could incorporate larger datasets, repeated cross-validation, or Bayesian methods to better quantify uncertainty and improve generalization.
+
+**Note:**
+
+Rather than identifying a single “best” model, this project illustrates how different modeling approaches reveal complementary aspects of the same problem, emphasizing the value of thoughtful model selection over algorithmic complexity.

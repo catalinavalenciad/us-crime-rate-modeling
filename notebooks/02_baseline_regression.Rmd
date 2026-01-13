@@ -1,0 +1,211 @@
+---
+title: "Baseline Regression"
+author: "Catalina Valencia"
+output: html_document
+---
+
+**Project:** US Crime Rate Modeling: Regression, Regularization, and Tree-Based Methods
+
+**File:** 05_baseline_regression.Rmd
+
+### Objectives:
+- Fit multiple linear regression models to predict crime rates.
+- Compare full and reduced models.
+- Make predictions on a test data point.
+- Evaluate models using cross-validation.
+- Discuss overfitting and model generalization.
+
+Environment Setup
+
+```{r}
+rm(list = ls())
+```
+
+Load Required Libraries
+
+```{r}
+library(DAAG)
+```
+
+Load Data
+
+```{r}
+crimedata <- read.table(
+  "../data/uscrime.txt", 
+  header = TRUE, 
+  stringsAsFactors = FALSE
+  )
+```
+
+### Normality Considerations
+
+The distribution of the response variable was examined in detail during the data overview stage (see *Data Overview and Outlier Assessment*). Histogram, boxplot, Q–Q plot, and index plot diagnostics indicated mild right skew and the presence of potential outliers.
+
+A Shapiro–Wilk test further suggested deviation from normality (W = 0.9127, p-value = 0.0019). However, given the moderate sample size and the robustness of linear regression to mild departures from normality, modeling proceeds with the original response variable.
+
+As a result, subsequent regression inference is interpreted with appropriate caution.
+
+### Full Linear Regression Model 
+
+```{r}
+lm_full <- lm(Crime ~ ., data = crimedata)
+summary(lm_full)
+```
+
+**Results:**
+
+Linear regression using all predictors (full model):
+
+Residual standard error: 209.1 on 31 degrees of freedom.
+
+Multiple R-squared: 0.8031, Adjusted R-squared: 0.7078.
+
+F-statistic: 8.429 on 15 and 31 DF, p-value: 3.539e-07.
+
+- The model explains a large portion of variance in crime rates (≈ 80% with all predictors), indicating overall good fit.
+
+- Several predictors are not statistically significant at α = 0.05 (e.g., So, Po2, LF, M.F, Pop, NW, U1, Wealth, Time), suggesting potential overfitting.
+
+- Significant predictors include M, Ed, Po1 (marginally), U2 (marginally), Ineq, and Prob.
+
+- Implication: While the full model fits the data well, removing insignificant predictors may improve generalizability and reduce overfitting.
+
+### Reduced Linear Regression Model
+
+Keep only variables with p-value <= 0.1
+
+```{r}
+lm_reduced <- lm(Crime ~ M + Ed + Po1 + U2 + Ineq + Prob, data = crimedata)
+summary(lm_reduced)
+```
+
+**Results:**
+
+Reduced linear regression model (selected predictors: M, Ed, Po1, U2, Ineq, Prob):
+
+Residual standard error: 200.7 on 40 degrees of freedom.
+
+Multiple R-squared: 0.7659, Adjusted R-squared: 0.7307.
+
+F-statistic: 21.81 on 6 and 40 DF, p-value: 3.418e-11.
+
+- The reduced model explains approximately 77% of the variance in crime rates, slightly lower than the full model (≈80%), but still indicates a strong fit.
+
+- All included predictors are statistically significant at α = 0.05.
+
+- By removing the insignificant variables from the full model, we reduce potential overfitting while retaining the main explanatory factors.
+
+- Key predictors in the reduced model: M, Ed, Po1, U2, Ineq, Prob; all contribute meaningfully to explaining crime rates.
+
+- Implication: This reduced model is likely to generalize better to new data compared to the full model.
+
+**Prediction Using Full Linear Regression Model**
+
+```{r}
+testdata <- data.frame(
+  M = 14.0, So = 0, Ed = 10.0, Po1 = 12.0, Po2 = 15.5,
+  LF = 0.640, M.F = 94.0, Pop = 150, NW = 1.1, U1 = 0.120,
+  U2 = 3.6, Wealth = 3200, Ineq = 20.1, Prob = 0.04, Time = 39.0
+)
+
+pred_full <- predict(lm_full, testdata)
+pred_full
+```
+
+**Results:**
+
+Predicted Crime Rate for Full Model = 155.4349
+
+- The full linear regression model predicts a crime rate of ~155 per 100k for this test case.
+
+- While the prediction is plausible, caution is warranted: the full model includes several predictors that were statistically insignificant, which may reduce reliability and increase potential overfitting.
+
+- For more robust prediction, the reduced model (with only significant predictors) is likely preferable.
+
+**Prediction Using Reduced Linear Regression Model**
+
+```{r}
+pred_reduced <- predict(lm_reduced, testdata)
+pred_reduced
+```
+
+**Results:**
+
+Predicted Crime Rate (Reduced Model) = 1304.25
+
+- The reduced linear regression model predicts a crime rate of ~1304 per 100k for this test case.
+
+- Compared to the full model, this prediction relies only on statistically significant predictors, reducing potential noise from irrelevant variables.
+
+- The estimate is more reliable and likely generalizes better, though extreme values should still be interpreted cautiously if they fall outside the range of the training data.
+
+### Cross-Validation
+
+```{r}
+set.seed(1)
+```
+
+**Full Linear Regression Model CV**
+
+```{r}
+cv_full <- cv.lm(crimedata, lm_full, m = 5)
+SSres_cv_full <- attr(cv_full, "ms") * nrow(crimedata)
+SStot <- sum((crimedata$Crime - mean(crimedata$Crime))^2)
+cv_r2_full <- 1 - SSres_cv_full / SStot
+cv_r2_full
+```
+
+**Results:**
+
+Cross-validated R^2 for Full Model = 0.4198 
+
+- While the full model had an in-sample R^2 of 0.8031, the cross-validated R^2 drops to 0.4198.
+
+- This substantial decrease indicates overfitting: the model fits the training data well but generalizes poorly to unseen data.
+
+- The presence of many insignificant predictors likely contributes to this instability.
+
+- Cross-validation highlights that simpler models may provide more robust predictions.
+
+**Reduced Linear Regression Model CV**
+
+```{r}
+cv_reduced <- cv.lm(crimedata, lm_reduced, m = 5)
+SSres_cv_reduced <- attr(cv_reduced, "ms") * nrow(crimedata)
+cv_r2_reduced <- 1 - SSres_cv_reduced / SStot
+cv_r2_reduced
+```
+
+**Results:**
+
+Cross-validated R^2 (Reduced Model) = 0.6340
+
+- The reduced model has a CV R^2 of 0.6340, substantially higher than the full model's CV R^2 (0.4198).
+
+- This indicates that the reduced model generalizes much better to unseen data.
+
+- Removing insignificant predictors reduces overfitting while retaining most of the explanatory power.
+
+- Cross-validation supports the choice of the reduced model for reliable predictions.
+
+### Summary of Findings and Conclusion
+
+- Full model:
+
+     - In-sample R^2 = 0.8031, Adjusted R^2 = 0.7078
+ 
+     - Cross-validated R^2 = 0.4198; strong overfitting.
+
+     - Test prediction (example case): 155.4349; likely unreliable due to inclusion of many insignificant predictors.
+
+- Reduced model:
+ 
+     - In-sample R^2 = 0.7659, Adjusted R^2 = 0.7307
+     
+     - Cross-validated R^2 = 0.6340; substantially better generalization.
+
+     - Test prediction (example case): 1304.2450; more realistic and stable estimate.
+
+While the full model fits the training data slightly better, the reduced model is preferable for prediction. Fewer predictors reduce overfitting, improve interpretability, and provide more reliable estimates on new data. 
+
+**Note:** Subsequent analyses explore alternative modeling approaches using the full predictor set to evaluate robustness rather than to refine this specific model.

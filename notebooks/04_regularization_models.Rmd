@@ -1,0 +1,335 @@
+---
+title: "Regularization Models"
+author: "Catalina Valencia"
+output: html_document
+---
+
+**Project:** US Crime Rate Modeling: Regression, Regularization, and Tree-Based Methods
+
+**File:** 04_regularization_models.Rmd
+
+### Objectives:
+- Address multicollinearity and overfitting using regularization
+- Fit and compare Stepwise, Ridge, Lasso, and Elastic Net models
+- Examine coefficient shrinkage and variable selection behavior
+
+### Notes:
+- Stepwise regression serves as a classical baseline
+- Penalized models require standardized predictors
+- Emphasis is on stability and generalization, not inference
+
+Environment Setup
+
+```{r}
+rm(list = ls())
+set.seed(1)
+```
+
+Load Required Libraries
+
+```{r}
+library(glmnet)
+```
+
+Load Data
+
+```{r}
+crimedata <- read.table(
+  "../data/uscrime.txt",
+  header = TRUE
+)
+```
+
+Response and Predictor Separation
+
+```{r}
+y <- crimedata$Crime
+X <- crimedata[, -which(names(crimedata) == "Crime")]
+```
+
+### Full Linear Regression Model
+
+Baseline multiple linear regression using all predictors
+
+```{r}
+full_lm <- lm(Crime ~ ., data = crimedata)
+summary(full_lm)
+```
+
+**Results:**
+
+The full linear regression model includes all p = 15 predictors and is fit on n = 47 observations.
+
+- Multiple R-squared: 0.8031
+
+- Adjusted R-squared: 0.7078
+
+- Residual standard error: 209.1
+
+The model shows strong in-sample fit, but the gap between multiple and adjusted R-squared indicates limited contribution from some predictors.
+
+Large standard errors and weak individual significance suggest multicollinearity, supporting variable selection and regularization.
+
+### Stepwise Regression - Backwards (AIC)
+
+- Reduce model complexity using information criteria.
+
+- Retain interpretability while mitigating overfitting.
+
+**Notes:**
+
+- Stepwise selection is heuristic and unstable under multicollinearity, motivating regularization methods.
+
+```{r}
+stepwise_model <- step(
+  full_lm,
+  direction = "both",
+  trace = FALSE
+)
+
+summary(stepwise_model)
+```
+
+**Results:**
+
+Backward stepwise regression (AIC) retained 8 predictors:
+
+M, Ed, Po1, M.F, U1, U2, Ineq, Prob
+
+Model fit:
+
+- Multiple R-squared: 0.7888
+
+- Adjusted R-squared: 0.7444
+
+- Residual standard error: 195.5
+
+Relative to the full model, stepwise selection reduces dimensionality while preserving similar explanatory power.
+
+**Predictor Scaling for Regularization**
+
+- Required for Ridge, Lasso, and Elastic Net.
+
+- Ensures fair penalization across predictors.
+
+- Response variable remains unscaled.
+
+```{r}
+X_scaled <- scale(X)
+
+X_center <- attr(X_scaled, "scaled:center")
+X_scale  <- attr(X_scaled, "scaled:scale")
+```
+
+**Results:**
+
+Predictors were standardized for regularization; the response variable was not scaled.
+
+### Ridge Regression (alpha = 0)
+
+```{r}
+ridge_cv <- cv.glmnet(
+  x = X_scaled,
+  y = y,
+  alpha = 0
+)
+
+plot(ridge_cv)
+
+lambda_ridge <- ridge_cv$lambda.min
+lambda_ridge
+
+ridge_model <- glmnet(
+  x = X_scaled,
+  y = y,
+  alpha = 0,
+  lambda = lambda_ridge
+)
+
+summary(ridge_model)
+
+ridge_cv$lambda.1se
+```
+
+**Results:**
+
+Ridge regression was fit using 10-fold cross-validation.
+
+- Optimal penalty parameter (lambda.min): 60.7785
+
+- One-standard-error penalty (lambda.1se): 223.5662
+
+Coefficient magnitudes are shrunk toward zero, reducing variance under multicollinearity while retaining all predictors.
+
+**Ridge Coefficients (Original Scale)**
+
+```{r}
+beta_ridge_std <- as.vector(coef(ridge_model))[-1]
+beta_ridge_orig <- beta_ridge_std / X_scale
+
+intercept_ridge_orig <- coef(ridge_model)[1] -
+  sum(beta_ridge_orig * X_center)
+
+beta_ridge_orig
+intercept_ridge_orig
+```
+
+**Results:**
+
+All predictors remain in the ridge regression model, with coefficients shrunk relative to the full OLS estimates.
+
+- Largest-magnitude coefficients correspond to:
+   Prob:  -3654.5781
+   U1:    -2301.8273
+
+These predictors dominate the linear signal after shrinkage, indicating strong associations with crime rate. Ridge stabilizes estimation under multicollinearity but does not induce sparsity, motivating comparison with Lasso.
+
+### Lasso Regression (alpha = 1)
+
+```{r}
+lasso_cv <- cv.glmnet(
+  x = X_scaled,
+  y = y,
+  alpha = 1
+)
+
+plot(lasso_cv)
+
+lambda_lasso <- lasso_cv$lambda.min
+lambda_lasso
+
+lasso_model <- glmnet(
+  x = X_scaled,
+  y = y,
+  alpha = 1,
+  lambda = lambda_lasso
+)
+
+summary(lasso_model)
+```
+
+One-standard-error penalty:
+
+```{r}
+lambda_1se <- lasso_cv$lambda.1se
+lambda_1se
+```
+
+Number of nonzero coefficients at lambda.min:
+
+```{r}
+num_nonzero <- sum(coef(lasso_model)[-1] != 0)
+num_nonzero
+```
+
+**Results:**
+
+Lasso regression was fit using 10-fold cross-validation.
+
+- Optimal penalty parameter (lambda.min): 16.1433
+
+- One-standard-error penalty (lambda.1se): 37.2931
+
+At lambda.min:
+
+- Number of nonzero coefficients: 10
+
+Lasso enforces sparsity by shrinking some coefficients exactly to zero, yielding a more interpretable model.
+
+**Lasso Coefficients (Original Scale)**
+
+```{r}
+beta_lasso_std <- as.vector(coef(lasso_model))[-1]
+beta_lasso_orig <- beta_lasso_std / X_scale
+
+intercept_lasso_orig <- coef(lasso_model)[1] -
+  sum(beta_lasso_orig * X_center)
+
+beta_lasso_orig
+intercept_lasso_orig
+```
+
+**Lasso Variable Selection**
+
+```{r}
+selected_vars_lasso <- names(beta_lasso_orig)[beta_lasso_orig != 0]
+selected_vars_lasso
+```
+
+**Results:**
+
+The Lasso-selected model retains 10 predictors:
+M, So, Ed, Po1, LF, M.F, NW, U2, Ineq, Prob
+
+This yields a sparse, interpretable model, though coefficient estimates are biased due to shrinkage. Variable selection can be sensitive to correlated predictors.
+
+### Elastic Net Regression (alpha = 0.5)
+
+- Combine Ridge shrinkage with Lasso sparsity.
+
+- Handle groups of correlated predictors more gracefully.
+
+```{r}
+alpha_enet <- 0.5
+
+enet_cv <- cv.glmnet(
+  x = X_scaled,
+  y = y,
+  alpha = alpha_enet
+)
+
+plot(enet_cv)
+
+lambda_enet <- enet_cv$lambda.min
+lambda_enet
+
+enet_model <- glmnet(
+  x = X_scaled,
+  y = y,
+  alpha = alpha_enet,
+  lambda = lambda_enet
+)
+
+summary(enet_model)
+```
+
+**Results:**
+
+Elastic Net (alpha = 0.5) retains 12 predictors at lambda.min = 29.4183.
+
+This model balances shrinkage and sparsity, handling correlated predictors more gracefully than Lasso while maintaining interpretability.
+
+Elastic Net Coefficients (Original Scale)
+
+```{r}
+beta_enet_std <- as.vector(coef(enet_model))[-1]
+beta_enet_orig <- beta_enet_std / X_scale
+
+intercept_enet_orig <- coef(enet_model)[1] -
+  sum(beta_enet_orig * X_center)
+
+beta_enet_orig
+intercept_enet_orig
+```
+
+**Results:**
+
+Elastic Net (alpha = 0.5) retains 12 predictors at lambda.min = 29.4183.
+
+- Coefficients include M, So, Ed, Po1, Po2, LF, M.F, NW, U2, Ineq, Prob, Pop=0, Wealth=0, Time=0 (zero coefficients indicate variable exclusion).
+
+- Compared to Lasso, Elastic Net includes additional correlated predictors while still controlling variance.
+
+Intercept: -3865.168
+
+This model balances sparsity and shrinkage, offering a compromise between interpretability and stability.
+
+### Conclusion
+
+- Stepwise regression reduces predictors but is sensitive to correlated covariates.
+
+- Ridge stabilizes all coefficients under multicollinearity but keeps all variables.
+
+- Lasso selects a sparse set of predictors by shrinking some coefficients to zero.
+
+- Elastic Net combines Lasso sparsity and Ridge stability, handling correlated predictors effectively.
