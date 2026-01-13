@@ -1,0 +1,215 @@
+---
+title: "Data Overview and Outlier Assessment"
+author: "Catalina Valencia"
+output: html_document
+---
+
+**Project:** US Crime Rate Modeling: Comparing Regression, Regularization, and Tree-Based Methods
+
+**File:** 01_data_overview_and_preparation.Rmd
+
+### Objectives:
+- Load and summarize the US crime dataset.
+- Examine the distribution of crime rates.
+- Assess potential outliers in the response variable (Crime).
+- Apply Grubbs’ test in a structured and interpretable manner.
+- Document decisions regarding outlier treatment and scaling.
+
+### Notes:
+- Outlier detection is conducted as an exploratory data quality check.
+- No observations are removed due to the small sample size.
+- The original dataset is retained for all subsequent analyses.
+
+Environment Setup
+
+```{r}
+rm(list = ls())
+```
+
+Load Required Libraries
+
+```{r}
+library(outliers)
+```
+
+Load Data
+
+```{r}
+uscrime <- read.table(
+  "../data/uscrime.txt",
+  header = TRUE,
+  stringsAsFactors = FALSE
+)
+```
+
+### Data Overview
+
+```{r}
+
+head(uscrime)
+tail(uscrime)
+summary(uscrime)
+```
+
+Variable of Interest: crime represents the number of crimes per 100,000 people
+
+```{r}
+crime <- uscrime$Crime
+```
+
+### Exploratory Distribution Diagnostics
+
+- Examine the distributional shape of the crime rate variable.
+
+- Identify potential deviations from normality.
+
+- Visually assess the presence of extreme values.
+
+```{r}
+par(mfrow = c(2, 2))
+
+hist(
+  crime,
+  main = "Histogram of Crime Rates",
+  xlab = "Crimes per 100,000 People"
+)
+
+boxplot(
+  crime,
+  main = "Boxplot of Crime Rates"
+)
+
+qqnorm(crime, main = "Q–Q Plot of Crime Rates")
+qqline(crime, col = "red")
+
+plot(
+  crime,
+  type = "b",
+  main = "Index Plot of Crime Rates",
+  ylab = "Crime Rate",
+  xlab = "Observation Index"
+)
+
+par(mfrow = c(1, 1))
+```
+
+**Normality Assessment**
+
+- Formally test the normality assumption
+
+- Interpret results in conjunction with visual diagnostics
+
+```{r}
+shapiro.test(crime)
+```
+
+**Results:**
+
+Shapiro–Wilk test statistic W = 0.9127, with p-value = 0.0019.
+
+- The test rejects the null hypothesis of normality at p < 0.05. 
+
+- Visual diagnostics suggest the distribution is positively skewed (right-skewed). While the central portion appears approximately symmetric and normally distributed, departures from normality are driven by the upper tail containing several potential outliers.
+
+With these findings, Grubbs’ test is applied cautiously and interpreted in conjunction with graphical evidence.
+
+### Grubbs’ Test for Outliers
+
+- Identify potential extreme observations in the crime rate.
+
+- Evaluate whether high or low values constitute statistical outliers.
+
+**Test for two-sided outliers (both extremes simultaneously)**
+
+```{r}
+grubbs.test(crime, type = 11)
+```
+
+**Results:**
+
+Grubbs’ test for two opposite outliers yields:
+
+G = 4.2688,
+  
+U = 0.7810,
+  
+p-value = 1.00.
+
+With a p-value of 1.00, the test provides no evidence that the extreme observations are statistically significant outliers. This result supports separate evaluation of the lower and upper extremes rather than reliance on a two-sided Grubbs’ test alone.
+
+**Test for a single high-end outlier**
+
+```{r}
+grubbs.test(crime, type = 10)
+```
+
+**Results:**
+
+One-sided Grubbs’ test (upper tail) yields:
+
+G = 2.8129,
+
+U = 0.8243,
+
+p-value = 0.0789.
+
+There is no statistically significant evidence that the largest crime rate is an outlier. However, since the value is relatively extreme, it is examined further in subsequent tests.
+
+Remove the highest value and test again
+
+```{r}
+crime2 <- crime[-which.max(crime)]
+
+grubbs.test(crime2, type = 10)
+```
+
+**Results:**
+
+After removing the highest value, the Grubbs’ test yields:
+
+G = 3.0634,
+
+U = 0.7868,
+
+p-value = 0.0285.
+
+At the 5% significance level, this result indicates that the largest remaining observation is statistically significant as a high-end outlier. Thus, the second-highest crime rate is also flagged as a potential outlier.
+
+
+**Test for a low-end outlier after removing the two highest values**
+
+```{r}
+crime3 <- crime2[-which.max(crime2)]
+
+grubbs.test(crime3, type = 10, opposite = TRUE)
+```
+
+**Results:**
+
+After removing the highest value, the Grubbs’ test yields:
+
+G = 1.6180,
+
+U = 0.9392,
+
+p-value = 1.
+
+This result provides no evidence of a statistically significant low-end outlier. Therefore, once the two largest observations are removed, the remaining data do not exhibit further outliers at the lower tail.
+
+**Outlier Assessment Summary**
+
+- A two-sided Grubbs’ test finds no statistically significant outliers, prompting separate evaluation of upper and lower tails.
+
+- Sequential one-sided tests identify two high-end observations of concern, with statistical significance reached for the second-highest value after removal of the maximum.
+
+- No low-end outliers are detected, and further iteration provides no evidence to remove additional observations.
+
+**Final Decision**
+
+Given the small sample size (n = 47) and the substantive plausibility of extreme crime rates, no observations are removed from the dataset. The full, original dataset is retained for all subsequent analyses to avoid bias introduced by aggressive trimming or over-cleaning.
+
+### Scaling Considerations
+
+Predictors in the dataset span different numeric ranges. Feature scaling is considered in downstream modeling steps where scale sensitivity is relevant.
+
+No scaling is applied at this stage in order to preserve the original measurement scale during exploratory analysis.
