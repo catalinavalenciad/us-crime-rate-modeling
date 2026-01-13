@@ -1,1 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>US Crime Rate Modeling: Comparing Regression, Regularization, and Tree-Based Methods</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      line-height: 1.6;
+    }
+    h1, h2 {
+      color: #222;
+    }
+    ul {
+      margin-left: 20px;
+    }
+    a {
+      color: #0066cc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
 
+<h1>US Crime Rate Modeling: Comparing Regression, Regularization, and Tree-Based Methods</h1>
+
+<p>
+This project demonstrates the design, evaluation, and comparison of regression and
+machine learning models to predict US crime rates using socio-economic indicators.
+The focus is on proper model validation, interpretability, and generalization
+performance rather than maximizing in-sample fit.
+</p>
+
+<h2>Business Context</h2>
+<p>
+Predicting city-level crime rates supports public policy, resource allocation, and
+socio-economic planning. The goal is to develop models that balance predictive
+accuracy, interpretability, and robustness under limited data.
+</p>
+
+<h2>Dataset</h2>
+<ul>
+  <li>US Crime Dataset (UCI Machine Learning Repository)</li>
+  <li><a href="http://www.statsci.org/data/general/uscrime.html">Dataset link</a></li>  
+  <li>47 cities, 15 numeric socio-economic predictors</li>
+  <li>1 numeric response variable (Crime)</li>
+</ul>
+
+<h2>Methods</h2>
+<ul>
+  <li>Data overview and outlier assessment (Grubbs’ test)</li>
+  <li>Baseline linear regression (full and reduced models)</li>
+  <li>Principal Component Regression (PCR) for multicollinearity</li>
+  <li>Regularization: Stepwise, Ridge, Lasso, Elastic Net</li>
+  <li>Tree-based models: Regression trees and Random Forests</li>
+</ul>
+
+<h2>Key Results</h2>
+<ul>
+  <li>Reduced linear regression generalized better than full model</li>
+  <li>Regularization improved stability but not predictive accuracy</li>
+  <li>Random forests reduced variance, slightly improving RMSE</li>
+  <li>Simple, interpretable models often outperform complex ones on small datasets</li>
+</ul>
+
+<h2>Limitations & Future Work</h2>
+<ul>
+  <li>Small sample size (n=47) limits model complexity</li>
+  <li>Results sensitive to data splits and hyperparameters</li>
+  <li>Focus on prediction; causal inference not addressed</li>
+  <li>Future work: larger datasets, Bayesian uncertainty quantification, external data integration</li>
+</ul>
+
+<h2>Analysis Outputs</h2>
+<ul>
+  <li><a href="01_data_overview_and_outlier_assessment.html">Data Overview & Outlier Assessment</a></li>
+  <li><a href="04_baseline_regression.html">Baseline Regression</a></li>
+  <li><a href="03_pca_regression.html">PCR</a></li>
+  <li><a href="02_regularization_models.html">Regularization Models</a></li>
+  <li><a href="05_tree_based_models.html">Tree-Based Models</a></li>
+  <li><a href="06_model_synthesis_and_final_conclusions.html">Model Synthesis & Final Conclusions</a></li>
+</ul>
+
+<h2>Source Code & Repository</h2>
+<p>
+Full methodology, R code, and reproducibility details are available in the
+<a href="https://github.com/catalinavalenciad/us-crime-rate-modeling">GitHub repository</a>.
+</p>
+
+<hr>
+
+<p>
+<strong>Author:</strong> Catalina Valencia<br>
+<a href="https://www.linkedin.com/in/catalina-valencia/">LinkedIn</a>
+</p>
+
+</body>
+</html>
